@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF to DOCX Converter</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            text-align: center; 
+            padding: 20px; 
+        }
+        #uploadForm { 
+            margin: 20px auto; 
+            padding: 20px; 
+            border: 1px solid #ddd; 
+            display: inline-block; 
+        }
+        input, button { 
+            margin-top: 10px; 
+        }
+    </style>
+</head>
+<body>
+    <h1>PDF to DOCX Converter</h1>
+    <form id="uploadForm" enctype="multipart/form-data">
+        <input type="file" id="pdfFile" accept="application/pdf" required>
+        <button type="submit">Convert</button>
+    </form>
+    <p id="status"></p>
+    
+    <script>
+        document.getElementById('uploadForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            let fileInput = document.getElementById('pdfFile');
+            if (!fileInput.files.length) return;
+
+            let formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            document.getElementById('status').innerText = "Converting...";
+
+            try {
+                let response = await fetch('https://pdf-docs.onrender.com/convert', { 
+                    method: 'POST', 
+                    body: formData 
+                });
+
+                if (!response.ok) {
+                    document.getElementById('status').innerText = "Conversion failed!";
+                    return;
+                }
+
+                let blob = await response.blob();
+                
+                // Create an object URL
+                let url = window.URL.createObjectURL(blob);
+                
+                // Create a link and prompt user to save the file
+                let a = document.createElement('a');
+                a.href = url;
+                a.download = fileInput.files[0].name.replace('.pdf', '.docx'); // Use original filename
+                a.textContent = "Click here to save the converted file";
+                
+                // Replace the status message with the download link
+                let statusElement = document.getElementById('status');
+                statusElement.innerText = "";
+                statusElement.appendChild(a);
+                
+            } catch (error) {
+                document.getElementById('status').innerText = "Error: " + error.message;
+            }
+        });
+    </script>
+</body>
+</html>
