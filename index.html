@@ -3,57 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PDF to DOCX Converter & Proofreader</title>
+    <title>PDF to Proofread DOCX Converter</title>
     <style>
-        body { 
-            font-family: Arial, sans-serif; 
-            text-align: center; 
-            padding: 20px; 
-        }
-        .container { 
-            width: 50%; 
-            margin: auto; 
-        }
-        #uploadForm, #proofreadForm { 
-            margin: 20px auto; 
-            padding: 20px; 
-            border: 1px solid #ddd; 
-            display: inline-block; 
-        }
-        input, button { 
-            margin-top: 10px; 
-        }
-        #status, #proofreadResults { 
-            margin-top: 20px; 
-        }
+        body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
+        #uploadForm { margin: 20px auto; padding: 20px; border: 1px solid #ddd; display: inline-block; }
+        input, button { margin-top: 10px; }
+        #proofreadSection { display: none; margin-top: 20px; }
+        textarea { width: 80%; height: 200px; margin-top: 10px; }
     </style>
 </head>
 <body>
-    <h1>PDF to DOCX Converter & Proofreader</h1>
-    
-    <div class="container">
-        <!-- PDF to DOCX Conversion Form -->
-        <form id="uploadForm" enctype="multipart/form-data">
-            <h3>Convert PDF to DOCX</h3>
-            <input type="file" id="pdfFile" accept="application/pdf" required>
-            <button type="submit">Convert</button>
-        </form>
-        <p id="status"></p>
-        
-        <!-- Proofreading Form -->
-        <form id="proofreadForm" enctype="multipart/form-data">
-            <h3>Proofread DOCX File</h3>
-            <input type="file" id="docxFile" accept=".docx" required>
-            <button type="submit">Proofread</button>
-        </form>
-        <p id="proofreadStatus"></p>
-        
-        <!-- Proofreading Results -->
-        <div id="proofreadResults"></div>
+    <h1>PDF to Proofread DOCX Converter</h1>
+    <form id="uploadForm" enctype="multipart/form-data">
+        <input type="file" id="pdfFile" accept="application/pdf" required>
+        <button type="submit">Convert</button>
+    </form>
+    <p id="status"></p>
+
+    <div id="proofreadSection">
+        <h2>Proofread Text</h2>
+        <textarea id="proofreadText" readonly></textarea><br>
+        <a id="downloadLink" style="display: none;" download>Download Proofread DOCX</a>
     </div>
 
     <script>
-        // Convert PDF to DOCX
         document.getElementById('uploadForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             let fileInput = document.getElementById('pdfFile');
@@ -74,60 +47,20 @@
                     return;
                 }
 
-                let blob = await response.blob();
-                let url = window.URL.createObjectURL(blob);
-                let a = document.createElement('a');
-                a.href = url;
-                a.download = fileInput.files[0].name.replace('.pdf', '.docx'); 
-                a.textContent = "Click here to download the converted DOCX file";
+                let data = await response.json();
+                
+                // Display proofread text
+                document.getElementById('proofreadText').value = data.proofread_text;
+                document.getElementById('proofreadSection').style.display = "block";
 
-                let statusElement = document.getElementById('status');
-                statusElement.innerText = "";
-                statusElement.appendChild(a);
+                // Set download link
+                let downloadLink = document.getElementById('downloadLink');
+                downloadLink.href = 'https://pdf-docs.onrender.com' + data.download_url;
+                downloadLink.innerText = "Download Proofread DOCX";
+                downloadLink.style.display = "block";
                 
             } catch (error) {
                 document.getElementById('status').innerText = "Error: " + error.message;
-            }
-        });
-
-        // Proofread DOCX File
-        document.getElementById('proofreadForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            let fileInput = document.getElementById('docxFile');
-            if (!fileInput.files.length) return;
-
-            let formData = new FormData();
-            formData.append('file', fileInput.files[0]);
-            document.getElementById('proofreadStatus').innerText = "Proofreading...";
-
-            try {
-                let response = await fetch('https://pdf-docs.onrender.com/proofread', { 
-                    method: 'POST', 
-                    body: formData 
-                });
-
-                if (!response.ok) {
-                    document.getElementById('proofreadStatus').innerText = "Proofreading failed!";
-                    return;
-                }
-
-                let result = await response.json();
-                let resultDiv = document.getElementById('proofreadResults');
-                resultDiv.innerHTML = "<h3>Proofreading Suggestions:</h3>";
-
-                if (result.errors.length === 0) {
-                    resultDiv.innerHTML += "<p>No errors found! 🎉</p>";
-                } else {
-                    result.errors.forEach(error => {
-                        let suggestionText = error.suggestions.length > 0 
-                            ? `Suggestions: ${error.suggestions.join(', ')}` 
-                            : "No suggestions available";
-                        resultDiv.innerHTML += `<p><strong>${error.message}</strong><br>${suggestionText}</p>`;
-                    });
-                }
-
-            } catch (error) {
-                document.getElementById('proofreadStatus').innerText = "Error: " + error.message;
             }
         });
     </script>
